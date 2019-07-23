@@ -1,50 +1,50 @@
-import React, { Component } from "react"
-import logo from "./logo.svg"
-import "./App.css"
+import React, { useState } from "react";
+import styled from "styled-components";
+import { DebounceInput } from "react-debounce-input";
 
-class LambdaDemo extends Component {
-  constructor(props) {
-    super(props)
-    this.state = { loading: false, msg: null }
+const App = () => {
+  const [data, setData] = useState();
+  return (
+    <div>
+      <SearchBox
+        placeholder="Search for movie"
+        onChange={async ({ target: { value: query } }) => {
+          setData(false);
+          if (query) {
+            const omdb = `/.netlify/functions/omdb?query=${query}`;
+            const data = await (await fetch(omdb)).json();
+            setData(data);
+          }
+        }}
+      />
+      {data && data.Poster !== "N/A" && <img alt="" src={data.Poster} />}
+      {data && (
+        <Table>
+          {Object.entries(data).map(([key, val]) => (
+            <tr>
+              <td>{key}</td>
+              <td>{JSON.stringify(val)}</td>
+            </tr>
+          ))}
+        </Table>
+      )}
+    </div>
+  );
+};
+const SearchBox = styled(DebounceInput)`
+  font-size: 2rem;
+  padding: 0.5rem 1rem;
+  display: block;
+  margin-bottom: 1rem;
+`;
+const Table = styled.table`
+  margin-left: 1rem;
+  font-size: 0.8rem;
+  opacity: 0.5;
+  display: inline-block;
+  vertical-align: top;
+  td {
+    max-width: 300px;
   }
-
-  handleClick = api => e => {
-    e.preventDefault()
-
-    this.setState({ loading: true })
-    fetch("/.netlify/functions/" + api)
-      .then(response => response.json())
-      .then(json => this.setState({ loading: false, msg: json.msg }))
-  }
-
-  render() {
-    const { loading, msg } = this.state
-
-    return (
-      <p>
-        <button onClick={this.handleClick("hello")}>{loading ? "Loading..." : "Call Lambda"}</button>
-        <button onClick={this.handleClick("async-dadjoke")}>{loading ? "Loading..." : "Call Async Lambda"}</button>
-        <br />
-        <span>{msg}</span>
-      </p>
-    )
-  }
-}
-
-class App extends Component {
-  render() {
-    return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <LambdaDemo />
-        </header>
-      </div>
-    )
-  }
-}
-
-export default App
+`;
+export default App;
